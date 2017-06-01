@@ -38,7 +38,7 @@ lat1 2 -0.6539416313 ; 3 -1.272688508 ; 1 -1.609786749 ;
 ```
 
 Where the log-probabilities are shown for each length. The lengths are sorted
-from the most likely to the lesser. You can choose to show only the
+from the most likely to the least. You can choose to show only the
 n-best lengths with the `--nbest`.
 
 Of course, the acoustic scale, language model scale and word insertion penalty
