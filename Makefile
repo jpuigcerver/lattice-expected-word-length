@@ -26,6 +26,6 @@ ADDLIBS = \
 include $(KALDI_ROOT)/src/makefiles/default_rules.mk
 
 PREFIX=/usr/local
-install: lattice-info
+install: lattice-word-length-distribution
 	test -d $(PREFIX) || mkdir -p $(PREFIX)/bin
-	install -m 0755 lattice-info $(PREFIX)/bin
+	install -m 0755 lattice-word-length-distribution $(PREFIX)/bin

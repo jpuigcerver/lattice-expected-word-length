@@ -109,6 +109,8 @@ int main(int argc, char *argv[]) {
     scale[0][0] = graph_scale;
     scale[1][1] = acoustic_scale;
 
+    std::cout.precision(10);
+
     for (int32 a = 1; a <= po.NumArgs(); ++a) {
       for (SequentialCompactLatticeReader lattice_reader(po.GetArg(a));
            !lattice_reader.Done(); lattice_reader.Next()) {
@@ -145,30 +147,33 @@ int main(int argc, char *argv[]) {
           }
         }
 
-        // Compute the backward cost of each state, so that bw[fst.Start()] has
-        // the total cost of the fst (i.e. likelihood = -cost), O(V + E).
-        std::vector<LogArc::Weight> bw;
-        fst::ShortestDistance<LogArc>(fst, &bw, true);
-        const double total_cost = bw[fst.Start()].Value();
 
         // 1. Determinize the fst in the Log semiring, so that each word length
         // is represented by a single path whose likelihood is the sum of
         // all likelihoods with the same word length.
+        LogVectorFst dfst;
+        fst::Determinize<fst::LogArc>(fst, &dfst);
+
+        // Compute the backward cost of each state, so that bw[fst.Start()] has
+        // the total cost of the fst (i.e. likelihood = -cost), O(V + E).
+        std::vector<LogArc::Weight> bw;
+        fst::ShortestDistance<LogArc>(dfst, &bw, true);
+        const float total_cost = bw[fst.Start()].Value();
+
         // 2. Convert from LogArc to StdArc (tropical semiring).
         // 3. Find the n-best paths in the tropical semiring.
         typedef fst::WeightConvertMapper<fst::LogArc, fst::StdArc> WeightMapper;
         StdVectorFst nbest_fst;
         fst::ShortestPath(
             fst::ArcMapFst<fst::LogArc, fst::StdArc, WeightMapper>(
-                fst::DeterminizeFst<fst::LogArc>(fst),
-                WeightMapper()), &nbest_fst, nbest);
+                dfst, WeightMapper()), &nbest_fst, nbest);
 
         // Get each path as separate fst.
         std::vector<StdVectorFst> nbest_fst_vector;
         fst::ConvertNbestToVector(nbest_fst, &nbest_fst_vector);
 
         // Print the length of the path and it's log-probability.
-        std::vector<std::pair<size_t, double>> nbest_pairs;
+        std::vector<std::pair<size_t, float>> nbest_pairs;
         std::cout << key;
         for (const StdVectorFst& path_fst : nbest_fst_vector) {
           std::vector<int32> path_isymbs;
